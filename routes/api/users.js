@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const gravatar = require('gravatar');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const config = require('config');
 const {
     check,
     validationResult
@@ -68,10 +70,36 @@ router.post('/', [
             user.password = await bcrypt.hash(password, salt);
 
             //save to database
+            //this returns information about the new database record
+            //such as id
             await user.save();
 
-
             //return jsonwebtoken
+            //creates a variable to store the user ID from mongo
+            const payload = {
+                user: {
+                    id: user.id
+                }
+            }
+
+            //jwt.sign create a new web token with our own payload and secret for encryption
+            jwt.sign(
+                payload,
+                config.get('jwtSecret'), {
+                    expiresIn: 36000
+                },
+                //check for any errors
+                (err, token) => {
+                    if (err) throw err;
+                    //print the token to console.
+                    console.log({
+                        token
+                    });
+                    res.json({
+                        token
+                    });
+                }
+            );
 
             res.send('User registration complete!');
         } catch (err) {
